@@ -8,6 +8,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
@@ -19,13 +20,17 @@ namespace JmTunneler
     public partial class Service1 : ServiceBase
     {
         private static Logger logger = LogManager.GetLogger("JmTunneler_Log");
+        int currentProcess = 0;
         private static iniProperties IniProperties = new iniProperties(); // Ini 설정값 변수
         private static SSHLibrary ssh = null;
+        private static ConnectionInfo info = null;
         private static bool autoReConnect = true;
+        private static Thread t1 = null;
 
         public Service1()
         {
             InitializeComponent();
+            currentProcess = int.Parse(Process.GetCurrentProcess().Id.ToString());
         }
 
         protected override void OnStart(string[] args)
@@ -58,6 +63,7 @@ namespace JmTunneler
                     logger.Error(e1.Message);
                     logger.Error(e1.StackTrace);
                     logger.Error("Delete the Setting.ini file in the path and try again.");
+                    Process.GetProcessById(currentProcess).Kill();
                 }
 
                 logger.Info("ini file parsed");
@@ -67,12 +73,14 @@ namespace JmTunneler
                 logger.Error(e1.Message);
                 logger.Error(e1.StackTrace);
                 logger.Error("There is a problem with the config file and continues with default settings");
+                Process.GetProcessById(currentProcess).Kill();
             }
             catch (Exception e1)
             {
                 logger.Error(e1.Message);
                 logger.Error(e1.StackTrace);
                 logger.Error("There is a problem with the config file and continues with default settings");
+                Process.GetProcessById(currentProcess).Kill();
             }
             #endregion
 
@@ -92,6 +100,7 @@ namespace JmTunneler
                     sshPort = 22;
                 }
 
+                logger.Info("myPid:          " + currentProcess);
                 logger.Info("sshIp:          " + sshIp);
                 logger.Info("sshPort:        " + sshPort);
                 logger.Info("Type:           " + IniProperties.Type);
@@ -101,19 +110,24 @@ namespace JmTunneler
                 logger.Info("Dest_Port:      " + IniProperties.Dest_Port);
 
                 PasswordAuthenticationMethod password = new PasswordAuthenticationMethod(IniProperties.SSH_ID, IniProperties.SSH_PW);
-                ConnectionInfo info = new ConnectionInfo(sshIp, sshPort, IniProperties.SSH_ID, password);
-                ssh = new SSHLibrary(info);
+                info = new ConnectionInfo(sshIp, sshPort, IniProperties.SSH_ID, password);
+            } catch (Exception e1)
+            {
+                logger.Error(e1.Message);
+                logger.Error(e1.StackTrace);
+                Process.GetProcessById(currentProcess).Kill();
+            }
+            #endregion
 
-                if (IniProperties.Type.Equals("C2S"))
-                    ssh.LocalForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
-                else if (IniProperties.Type.Equals("S2C"))
-                    ssh.RemoteForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
-
-                new Thread(delegate ()
+            #region Background Logic
+            t1 = new Thread(delegate ()
+            {
+                while (autoReConnect)
                 {
-                    while (autoReConnect)
+                    try
                     {
-                        if(!ssh.IsConnected())
+                        ssh = new SSHLibrary(info);
+                        if (!ssh.IsConnected())
                         {
                             if (IniProperties.Type.Equals("C2S"))
                                 ssh.LocalForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
@@ -122,19 +136,23 @@ namespace JmTunneler
                         }
                         Thread.Sleep(3000);
                     }
-                }).Start();
-            } catch (Exception e1)
-            {
-                logger.Error(e1.Message);
-                logger.Error(e1.StackTrace);
-            }
+                    catch (SocketException) { }
+                    catch (Exception e1)
+                    {
+                        autoReConnect = false;
+                        logger.Error(e1.Message);
+                        logger.Error(e1.StackTrace);
+                        Process.GetProcessById(currentProcess).Kill();
+                    }
+                }
+            });
+            t1.Start();
             #endregion
-            Console.ReadLine();
         }
 
         protected override void OnStop()
         {
-            autoReConnect = false;
+            Process.GetProcessById(currentProcess).Kill();
         }
     }
 }

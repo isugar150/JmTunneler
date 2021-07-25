@@ -1,0 +1,28 @@
+2021-07-25 23:33:12.4138  INFO - Parsing ini File :: C:\Users\JMKIM\Documents\GitHub\JmTunneler\JmTunneler\bin\Release\Setting.ini
+2021-07-25 23:33:12.4317  INFO - ini file parsed
+2021-07-25 23:33:12.4317  INFO - myPid:          16660
+2021-07-25 23:33:12.4317  INFO - sshIp:          namejm.com
+2021-07-25 23:33:12.4317  INFO - sshPort:        2234
+2021-07-25 23:33:12.4317  INFO - Type:           S2C
+2021-07-25 23:33:12.4317  INFO - List_Interface: 10.1.3.200
+2021-07-25 23:33:12.4317  INFO - List_Port:      6000
+2021-07-25 23:33:12.4317  INFO - Dest_Host:      127.0.0.1
+2021-07-25 23:33:12.4317  INFO - Dest_Port:      3389
+2021-07-25 23:33:21.6688 ERROR - Permission denied (password).
+2021-07-25 23:33:21.6748 ERROR -    위치: Renci.SshNet.ClientAuthentication.Authenticate(IConnectionInfoInternal connectionInfo, ISession session)
+   위치: Renci.SshNet.ConnectionInfo.Authenticate(ISession session, IServiceFactory serviceFactory)
+   위치: Renci.SshNet.Session.Connect()
+   위치: Renci.SshNet.BaseClient.CreateAndConnectSession()
+   위치: Renci.SshNet.BaseClient.Connect()
+   위치: JmTunneler.Library.SSHLibrary..ctor(ConnectionInfo _connectionInfo) 파일 C:\Users\JMKIM\Documents\GitHub\JmTunneler\JmTunneler\Library\SSHLibrary.cs:줄 28
+   위치: JmTunneler.Service1.<OnStart>b__8_0() 파일 C:\Users\JMKIM\Documents\GitHub\JmTunneler\JmTunneler\Service1.cs:줄 129
+2021-07-25 23:33:37.0679  INFO - Parsing ini File :: C:\Users\JMKIM\Documents\GitHub\JmTunneler\JmTunneler\bin\Release\Setting.ini
+2021-07-25 23:33:37.0838  INFO - ini file parsed
+2021-07-25 23:33:37.0838  INFO - myPid:          14168
+2021-07-25 23:33:37.0838  INFO - sshIp:          namejm.com
+2021-07-25 23:33:37.0838  INFO - sshPort:        2234
+2021-07-25 23:33:37.0838  INFO - Type:           S2C
+2021-07-25 23:33:37.0838  INFO - List_Interface: 10.1.3.200
+2021-07-25 23:33:37.0838  INFO - List_Port:      6000
+2021-07-25 23:33:37.0838  INFO - Dest_Host:      127.0.0.1
+2021-07-25 23:33:37.0838  INFO - Dest_Port:      3389
