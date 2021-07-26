@@ -126,15 +126,14 @@ namespace JmTunneler
                 {
                     try
                     {
-                        ssh = new SSHLibrary(info);
-                        if (!ssh.IsConnected())
+                        if (ssh == null || !ssh.IsConnected())
                         {
+                            ssh = new SSHLibrary(info);
                             if (IniProperties.Type.Equals("C2S"))
                                 ssh.LocalForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
                             else if (IniProperties.Type.Equals("S2C"))
                                 ssh.RemoteForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
                         }
-                        Thread.Sleep(3000);
                     }
                     catch (SocketException) { }
                     catch (Exception e1)
@@ -144,6 +143,7 @@ namespace JmTunneler
                         logger.Error(e1.StackTrace);
                         Process.GetProcessById(currentProcess).Kill();
                     }
+                    Thread.Sleep(3000);
                 }
             });
             t1.Start();
