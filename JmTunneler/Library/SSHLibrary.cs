@@ -13,24 +13,24 @@ namespace JmTunneler.Library
     public class SSHLibrary
     {
         private static Logger logger = LogManager.GetLogger("JmTunneler_Log");
-        SshClient sshClient = null;
-        ForwardedPortRemote _rForwardPort = null;
-        ForwardedPortLocal _lForwardPort = null;
-        ConnectionInfo _connectionInfo = null;
+        private SshClient _sshClient = null;
+        private ForwardedPortRemote _rForwardPort = null;
+        private ForwardedPortLocal _lForwardPort = null;
+        private ConnectionInfo _connectionInfo = null;
 
         public SSHLibrary(ConnectionInfo _connectionInfo)
         {
             this._connectionInfo = _connectionInfo;
 
-            sshClient = new SshClient(_connectionInfo);
-            sshClient.ErrorOccurred += delegate (object sender1, ExceptionEventArgs e1)
+            _sshClient = new SshClient(_connectionInfo);
+            _sshClient.ErrorOccurred += delegate (object sender1, ExceptionEventArgs e1)
             {
                 logger.Error(e1.Exception);
                 this.Dispose();
             };
             logger.Debug("Trying SSH connection...");
-            sshClient.KeepAliveInterval = new TimeSpan(0, 0, 5); //5초마다 HeartBeat
-            sshClient.Connect();
+            _sshClient.KeepAliveInterval = new TimeSpan(0, 0, 5); //5초마다 HeartBeat
+            _sshClient.Connect();
             logger.Debug("Connected SSH to {0}:{1}", _connectionInfo.Host, _connectionInfo.Port);
         }
 
@@ -48,7 +48,7 @@ namespace JmTunneler.Library
                 logger.Debug(e.OriginatorHost + ":" + e.OriginatorPort);
             };
 
-            sshClient.AddForwardedPort(_rForwardPort);
+            _sshClient.AddForwardedPort(_rForwardPort);
             _rForwardPort.Start();
 
             logger.Info("Forwarding local address {0}:{1} to remote address {2}:{3}", _rForwardPort.HostAddress, _rForwardPort.Port, _rForwardPort.BoundHostAddress, _rForwardPort.BoundPort);
@@ -69,7 +69,7 @@ namespace JmTunneler.Library
                 logger.Error(e.OriginatorHost + ":" + e.OriginatorPort);
             };
 
-            sshClient.AddForwardedPort(_lForwardPort);
+            _sshClient.AddForwardedPort(_lForwardPort);
             _lForwardPort.Start();
 
             logger.Info("Forwarding remote address {0}:{1} to local address {2}:{3}", _lForwardPort.BoundHost, _lForwardPort.BoundPort, _lForwardPort.Host, _lForwardPort.Port);
@@ -77,28 +77,31 @@ namespace JmTunneler.Library
 
         public bool IsConnected()
         {
-            return sshClient.IsConnected;
+            return _sshClient.IsConnected;
         }
 
         public IEnumerable<ForwardedPort> getForwardedPorts()
         {
-            return sshClient.ForwardedPorts;
+            return _sshClient.ForwardedPorts;
         }
 
         public void Dispose()
         {
             try
             {
-                if(_lForwardPort != null)
+                logger.Debug("in Socket Close Event");
+                if (_lForwardPort != null)
                     _lForwardPort.Dispose();
-                if(sshClient != null)
+                if(_sshClient != null)
                 {
-                    sshClient.Disconnect();
-                    sshClient.Dispose();
-                    sshClient = null;
+                    _sshClient.Disconnect();
+                    _sshClient.Dispose();
+                    _sshClient = null;
                 }
             }
-            catch (Exception) { }
+            catch (Exception e1) { 
+                logger.Debug(e1);
+            }
 
             logger.Debug("Disconnected SSH to {0}:{1}", _connectionInfo.Host, _connectionInfo.Port);
         }
