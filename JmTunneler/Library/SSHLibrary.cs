@@ -23,6 +23,11 @@ namespace JmTunneler.Library
             this._connectionInfo = _connectionInfo;
 
             sshClient = new SshClient(_connectionInfo);
+            sshClient.ErrorOccurred += delegate (object sender1, ExceptionEventArgs e1)
+            {
+                logger.Error(e1.Exception);
+                this.Dispose();
+            };
             logger.Debug("Trying SSH connection...");
             sshClient.KeepAliveInterval = new TimeSpan(0, 0, 5); //5초마다 HeartBeat
             sshClient.Connect();
@@ -35,7 +40,7 @@ namespace JmTunneler.Library
 
             _rForwardPort.Exception += delegate (object sender1, ExceptionEventArgs e1)
             {
-                logger.Debug(e1.Exception.ToString());
+                logger.Error(e1.Exception);
             };
 
             _rForwardPort.RequestReceived += delegate (object sender, PortForwardEventArgs e)
@@ -56,12 +61,12 @@ namespace JmTunneler.Library
             _lForwardPort.Exception += delegate (object sender1, ExceptionEventArgs e1)
 
             {
-                logger.Debug(e1.Exception.ToString());
+                logger.Error(e1.Exception);
             };
 
             _lForwardPort.RequestReceived += delegate (object sender, PortForwardEventArgs e)
             {
-                logger.Debug(e.OriginatorHost + ":" + e.OriginatorPort);
+                logger.Error(e.OriginatorHost + ":" + e.OriginatorPort);
             };
 
             sshClient.AddForwardedPort(_lForwardPort);
@@ -73,6 +78,11 @@ namespace JmTunneler.Library
         public bool IsConnected()
         {
             return sshClient.IsConnected;
+        }
+
+        public IEnumerable<ForwardedPort> getForwardedPorts()
+        {
+            return sshClient.ForwardedPorts;
         }
 
         public void Dispose()

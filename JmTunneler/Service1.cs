@@ -126,22 +126,33 @@ namespace JmTunneler
                 {
                     try
                     {
-                        ssh = new SSHLibrary(info);
-                        if (!ssh.IsConnected())
+
+                        if(ssh == null)
+                        {
+                            ssh = new SSHLibrary(info);
+                            logger.Info("You have logged in to the target SSH server with the account {}.", info.Username);
+                        }
+
+                        IEnumerable<ForwardedPort> forwardedPorts = ssh.getForwardedPorts();
+
+                        if (forwardedPorts.ToArray().Length == 0)
                         {
                             if (IniProperties.Type.Equals("C2S"))
+                            {
                                 ssh.LocalForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
+                            }
                             else if (IniProperties.Type.Equals("S2C"))
+                            {
                                 ssh.RemoteForwardedPort(IniProperties.Dest_Host, uint.Parse(IniProperties.Dest_Port), IniProperties.List_Interface, uint.Parse(IniProperties.List_Port));
+                            }
                         }
-                        Thread.Sleep(3000);
+                        Thread.Sleep(5000);
                     }
-                    catch (SocketException) { }
+                    catch (SocketException) { logger.Debug("Socket is Close"); }
                     catch (Exception e1)
                     {
                         autoReConnect = false;
-                        logger.Error(e1.Message);
-                        logger.Error(e1.StackTrace);
+                        logger.Error(e1);
                         Process.GetProcessById(currentProcess).Kill();
                     }
                 }
@@ -152,6 +163,7 @@ namespace JmTunneler
 
         protected override void OnStop()
         {
+            ssh.Dispose();
             Process.GetProcessById(currentProcess).Kill();
         }
     }
