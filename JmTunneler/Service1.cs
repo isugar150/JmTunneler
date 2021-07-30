@@ -21,19 +21,16 @@ namespace JmTunneler
     public partial class Service1 : ServiceBase
     {
         private static Logger _logger = LogManager.GetLogger("JmTunneler_Log");
-        private int _currentProcess = 0;
         private static iniProperties _IniProperties = new iniProperties(); // Ini 설정값 변수
         private static SSHLibrary _ssh = null;
         private static ConnectionInfo _info = null;
         private static ForwardedPort[] _forwardedPortList = null;
-        private static bool _autoReConnect = true;
-        private static Thread _t1 = null;
         private bool _firstLoop = true;
+        private Timer workTimer;
 
         public Service1()
         {
             InitializeComponent();
-            _currentProcess = int.Parse(Process.GetCurrentProcess().Id.ToString());
         }
 
         protected override void OnStart(string[] args)
@@ -66,7 +63,7 @@ namespace JmTunneler
                     _logger.Error(e1.Message);
                     _logger.Error(e1.StackTrace);
                     _logger.Error("Delete the Setting.ini file in the path and try again.");
-                    Process.GetProcessById(_currentProcess).Kill();
+                    base.OnStop();
                 }
 
                 _logger.Info("ini file parsed");
@@ -76,14 +73,14 @@ namespace JmTunneler
                 _logger.Error(e1.Message);
                 _logger.Error(e1.StackTrace);
                 _logger.Error("There is a problem with the config file and continues with default settings");
-                Process.GetProcessById(_currentProcess).Kill();
+                base.OnStop();
             }
             catch (Exception e1)
             {
                 _logger.Error(e1.Message);
                 _logger.Error(e1.StackTrace);
                 _logger.Error("There is a problem with the config file and continues with default settings");
-                Process.GetProcessById(_currentProcess).Kill();
+                base.OnStop();
             }
             #endregion
 
@@ -103,7 +100,6 @@ namespace JmTunneler
                     sshPort = 22;
                 }
 
-                _logger.Info("myPid:          " + _currentProcess);
                 _logger.Info("sshIp:          " + sshIp);
                 _logger.Info("sshPort:        " + sshPort);
                 _logger.Info("Type:           " + _IniProperties.Type);
@@ -118,108 +114,112 @@ namespace JmTunneler
             {
                 _logger.Error(e1.Message);
                 _logger.Error(e1.StackTrace);
-                Process.GetProcessById(_currentProcess).Kill();
+                base.OnStop();
             }
             #endregion
 
             #region Background Logic
-            _t1 = new Thread(delegate ()
-            {
-                while (_autoReConnect)
-                {
-                    try
-                    {
-                        _logger.Debug("in the Loop");
-                        if (_ssh == null)
-                        {
-                            _logger.Debug("init ssh Start");
-                            _ssh = new SSHLibrary(_info);
-                            _logger.Info("You have logged in to the target SSH server with the account {}.", _info.Username);
-                        }
-
-                        _logger.Debug("ssh.getForwardedPorts().ToArray().Length: " + _ssh.getForwardedPorts().ToArray().Length);
-
-                        _logger.Debug("_IniProperties.Type is " + _IniProperties.Type);
-
-                        if (!_firstLoop)
-                        {
-                            _forwardedPortList = _ssh.getForwardedPorts().ToArray();
-                            
-                            _logger.Debug("forwardedPortList[{}].IsStarted: {}", 0, _forwardedPortList[0].IsStarted);
-
-                            if (!_forwardedPortList[0].IsStarted)
-                            {
-                                if (_IniProperties.Type.Equals("C2S"))
-                                {
-                                    _ssh.LocalForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
-                                }
-                                else if (_IniProperties.Type.Equals("S2C"))
-                                {
-                                    _ssh.RemoteForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (_IniProperties.Type.Equals("C2S"))
-                            {
-                                _ssh.LocalForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
-                            }
-                            else if (_IniProperties.Type.Equals("S2C"))
-                            {
-                                _ssh.RemoteForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
-                            }
-                        }
-
-                        _firstLoop = false;
-                    }
-                    catch (SocketException) {
-                        if (_ssh != null)
-                        {
-                            _ssh.Dispose();
-                            _ssh = null;
-                            _firstLoop = true;
-                        }
-                        _logger.Debug("Socket is Close"); 
-                    }
-                    catch (SshConnectionException e1) { 
-                        if (_ssh != null)
-                        {
-                            _ssh.Dispose();
-                            _ssh = null;
-                            _firstLoop = true;
-                        }
-                        _logger.Error(e1); 
-                    }
-                    catch(SshException e1)
-                    {
-                        _logger.Info("List is already bound or Dest is already bound.");
-                        if (_ssh != null)
-                        {
-                            _ssh.Dispose();
-                            _ssh = null;
-                            _firstLoop = true;
-                        }
-                        _logger.Error(e1);
-                    }
-                    catch (Exception e1)
-                    {
-                        _autoReConnect = false;
-                        _logger.Error(e1);
-                        Process.GetProcessById(_currentProcess).Kill();
-                    }
-                    Thread.Sleep(5000);
-                }
-            });
-            _t1.Start();
+            workTimer = new Timer(new TimerCallback(DoWork), null, 5000, 5000);
+            //base.OnStart(args);
             #endregion
         }
 
         protected override void OnStop()
         {
-            _ssh.Dispose();
-            _ssh = null;
-            Process.GetProcessById(_currentProcess).Kill();
+            if(workTimer != null)
+                workTimer.Dispose();
+            if(_ssh != null)
+            {
+                _ssh.Dispose();
+                _ssh = null;
+            }
+        }
+
+        private void DoWork(object state)
+        {
+            try
+            {
+                _logger.Debug("in the Loop");
+                if (_ssh == null)
+                {
+                    _logger.Debug("init ssh Start");
+                    _ssh = new SSHLibrary(_info);
+                    _logger.Info("You have logged in to the target SSH server with the account {}.", _info.Username);
+                }
+
+                _logger.Debug("ssh.getForwardedPorts().ToArray().Length: " + _ssh.getForwardedPorts().ToArray().Length);
+
+                _logger.Debug("_IniProperties.Type is " + _IniProperties.Type);
+
+                if (!_firstLoop)
+                {
+                    _forwardedPortList = _ssh.getForwardedPorts().ToArray();
+
+                    _logger.Debug("forwardedPortList[{}].IsStarted: {}", 0, _forwardedPortList[0].IsStarted);
+
+                    if (!_forwardedPortList[0].IsStarted)
+                    {
+                        if (_IniProperties.Type.Equals("C2S"))
+                        {
+                            _ssh.LocalForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
+                        }
+                        else if (_IniProperties.Type.Equals("S2C"))
+                        {
+                            _ssh.RemoteForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
+                        }
+                    }
+                }
+                else
+                {
+                    if (_IniProperties.Type.Equals("C2S"))
+                    {
+                        _ssh.LocalForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
+                    }
+                    else if (_IniProperties.Type.Equals("S2C"))
+                    {
+                        _ssh.RemoteForwardedPort(_IniProperties.Dest_Host, uint.Parse(_IniProperties.Dest_Port), _IniProperties.List_Interface, uint.Parse(_IniProperties.List_Port));
+                    }
+                }
+
+                _firstLoop = false;
+            }
+            catch (SocketException)
+            {
+                if (_ssh != null)
+                {
+                    _ssh.Dispose();
+                    _ssh = null;
+                    _firstLoop = true;
+                }
+                _logger.Debug("Socket is Close");
+            }
+            catch (SshConnectionException e1)
+            {
+                if (_ssh != null)
+                {
+                    _ssh.Dispose();
+                    _ssh = null;
+                    _firstLoop = true;
+                }
+                _logger.Error(e1);
+            }
+            catch (SshException e1)
+            {
+                _logger.Info("List is already bound or Dest is already bound.");
+                if (_ssh != null)
+                {
+                    _ssh.Dispose();
+                    _ssh = null;
+                    _firstLoop = true;
+                }
+                _logger.Debug(e1);
+                base.OnStop();
+            }
+            catch (Exception e1)
+            {
+                _logger.Error(e1);
+                base.OnStop();
+            }
         }
     }
 }
