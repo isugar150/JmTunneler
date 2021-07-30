@@ -132,20 +132,19 @@ namespace JmTunneler
                         _logger.Debug("in the Loop");
                         if (_ssh == null)
                         {
-                            _logger.Debug("init _ssh Start");
-                            if (!_firstLoop)
-                                _logger.Debug("variable ssh is null");
+                            _logger.Debug("init ssh Start");
                             _ssh = new SSHLibrary(_info);
                             _logger.Info("You have logged in to the target SSH server with the account {}.", _info.Username);
                         }
 
                         _logger.Debug("ssh.getForwardedPorts().ToArray().Length: " + _ssh.getForwardedPorts().ToArray().Length);
 
-                        _forwardedPortList = _ssh.getForwardedPorts().ToArray();
-
                         _logger.Debug("_IniProperties.Type is " + _IniProperties.Type);
+
                         if (!_firstLoop)
                         {
+                            _forwardedPortList = _ssh.getForwardedPorts().ToArray();
+                            
                             _logger.Debug("forwardedPortList[{}].IsStarted: {}", 0, _forwardedPortList[0].IsStarted);
 
                             if (!_forwardedPortList[0].IsStarted)
@@ -179,6 +178,7 @@ namespace JmTunneler
                         {
                             _ssh.Dispose();
                             _ssh = null;
+                            _firstLoop = true;
                         }
                         _logger.Debug("Socket is Close"); 
                     }
@@ -187,8 +187,20 @@ namespace JmTunneler
                         {
                             _ssh.Dispose();
                             _ssh = null;
+                            _firstLoop = true;
                         }
                         _logger.Error(e1); 
+                    }
+                    catch(SshException e1)
+                    {
+                        _logger.Info("List is already bound or Dest is already bound.");
+                        if (_ssh != null)
+                        {
+                            _ssh.Dispose();
+                            _ssh = null;
+                            _firstLoop = true;
+                        }
+                        _logger.Error(e1);
                     }
                     catch (Exception e1)
                     {
