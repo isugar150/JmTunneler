@@ -90,6 +90,7 @@ namespace JmTunneler.Library
             _lForwardPort.Dispose();
             sshClient.Disconnect();
             sshClient.Dispose();
+            sshClient = null;
 
             logger.Debug("Disconnected SSH to {0}:{1}", _connectionInfo.Host, _connectionInfo.Port);
         }

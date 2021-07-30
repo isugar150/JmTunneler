@@ -155,6 +155,7 @@ namespace JmTunneler
                         logger.Error(e1);
                         Process.GetProcessById(currentProcess).Kill();
                     }
+                    Thread.Sleep(3000);
                 }
             });
             t1.Start();
