@@ -87,10 +87,18 @@ namespace JmTunneler.Library
 
         public void Dispose()
         {
-            _lForwardPort.Dispose();
-            sshClient.Disconnect();
-            sshClient.Dispose();
-            sshClient = null;
+            try
+            {
+                if(_lForwardPort != null)
+                    _lForwardPort.Dispose();
+                if(sshClient != null)
+                {
+                    sshClient.Disconnect();
+                    sshClient.Dispose();
+                    sshClient = null;
+                }
+            }
+            catch (Exception) { }
 
             logger.Debug("Disconnected SSH to {0}:{1}", _connectionInfo.Host, _connectionInfo.Port);
         }

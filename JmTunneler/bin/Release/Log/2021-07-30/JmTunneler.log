@@ -1,0 +1,15 @@
+2021-07-30 18:21:28.8545  INFO - Parsing ini File :: C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\bin\Release\Setting.ini
+2021-07-30 18:21:28.8857  INFO - ini file parsed
+2021-07-30 18:21:28.8857  INFO - myPid:          4296
+2021-07-30 18:21:28.8857  INFO - sshIp:          
+2021-07-30 18:21:28.8857  INFO - sshPort:        22
+2021-07-30 18:21:28.8857  INFO - Type:           
+2021-07-30 18:21:28.8857  INFO - List_Interface: 
+2021-07-30 18:21:28.8857  INFO - List_Port:      
+2021-07-30 18:21:28.8857  INFO - Dest_Host:      
+2021-07-30 18:21:28.8857  INFO - Dest_Port:      
+2021-07-30 18:21:28.8857 ERROR - username
+2021-07-30 18:21:28.9014 ERROR -    위치: Renci.SshNet.AuthenticationMethod..ctor(String username)
+   위치: Renci.SshNet.PasswordAuthenticationMethod..ctor(String username, Byte[] password)
+   위치: Renci.SshNet.PasswordAuthenticationMethod..ctor(String username, String password)
+   위치: JmTunneler.Service1.OnStart(String[] args) 파일 C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\Service1.cs:줄 110

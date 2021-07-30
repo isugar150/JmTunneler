@@ -34,3 +34,4 @@ C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\obj\Release\JmTunneler.csp
 C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\obj\Release\JmTunneler.csproj.CopyComplete
 C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\obj\Release\JmTunneler.exe
 C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\obj\Release\JmTunneler.pdb
+C:\Users\o0_0o\Documents\GitHub\JmTunneler\JmTunneler\obj\Release\JmTunneler.csproj.AssemblyReference.cache
