@@ -133,9 +133,7 @@ namespace JmTunneler
                             logger.Info("You have logged in to the target SSH server with the account {}.", info.Username);
                         }
 
-                        IEnumerable<ForwardedPort> forwardedPorts = ssh.getForwardedPorts();
-
-                        if (forwardedPorts.ToArray().Length == 0)
+                        if (ssh.getForwardedPorts().ToArray().Length == 0)
                         {
                             if (IniProperties.Type.Equals("C2S"))
                             {
